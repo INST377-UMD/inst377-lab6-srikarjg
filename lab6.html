@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Map of US</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+    <style>
+        #map { height: 500px; width: 100%; }
+        .marker-info { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Map of US</h1>
+    <div id="map"></div>
+    <div class="marker-info" id="marker-info">
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        function getRandomInRange(from, to, fixed) {
+            return (Math.random() * (to - from) + from).toFixed(fixed) * 1;
+        }
+        const coordinates = [
+            { lat: getRandomInRange(30, 35, 3), long: getRandomInRange(-90, -100, 3) },
+            { lat: getRandomInRange(30, 35, 3), long: getRandomInRange(-90, -100, 3) },
+            { lat: getRandomInRange(30, 35, 3), long: getRandomInRange(-90, -100, 3) }
+        ];
+        const map = L.map('map').setView([30, -100], 5); 
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        function fetchLocality(lat, long, markerIndex) {
+            fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${long}&localityLanguage=en`)
+                .then(response => response.json())
+                .then(data => {
+                    const locality = data.locality || "Unknown";
+                    document.getElementById('marker-info').innerHTML += `
+                        <p>Marker ${markerIndex + 1}: Latitude: ${lat}, Longitude: ${long}<br>
+                        Locality: ${locality}</p>
+                    `;
+                })
+                .catch(error => {
+                    console.error('Error fetching locality:', error);
+                });
+        }
+
+        coordinates.forEach((coord, index) => {
+            const marker = L.marker([coord.lat, coord.long]).addTo(map);
+            marker.bindPopup(`Marker ${index + 1}: Latitude: ${coord.lat}, Longitude: ${coord.long}`).openPopup();
+            fetchLocality(coord.lat, coord.long, index);
+        });
+    </script>
+</body>
+</html>
